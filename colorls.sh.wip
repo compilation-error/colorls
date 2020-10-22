@@ -46,11 +46,16 @@ do
 	fi
 done
 
+directories=""
+files=""
+
 
 # args: $1 parentdir, $2 depth, $3 offset, $4 treebranch
 function print_recur {
 	for entry in "$1"*
 	do
+		local directories1=""
+		local files1=""
 		cols=""
 		cole=""
 		ext_split="$entry"
@@ -76,16 +81,27 @@ function print_recur {
 
 		if [ "${entry##*/}" != "*" ]
 		then
-			echo -e "$3 $4 ${ico} ${cols}${entry##*/}${cole}"
-			if [ -d "$entry" ] && [ $2 -gt 0 ]
+			if [ -d "$entry" ]
 			then
-				echo "$3    |"
-				print_recur "$entry/" "$(($2 - 1))" "$3   " "|"
+				directories1="${directories1}$3 $4 ${ico} ${cols}${entry##*/}${cole}\n"
+				if [ $2 -gt 0 ]
+				then
+					directories1="${directories1}$3    |"
+					call_rec=$(print_recur "$entry/" "$(($2 - 1))" "$3\t" "|")
+					directories1="${directories1}${call_rec}\n"
+				fi
+			else
+				files1="${files1}$3 $4 ${ico} ${cols}${entry##*/}${cole}\n"
 			fi
 		fi
+		#directories="${directories}${directories1}"
+		#files="${files}${files1}"
+		echo "${directories1} ${files1}"
+
+
 	done
 }
 
-print_recur "$PARENT" "$R_DEPTH" ""
+output=$(print_recur "$PARENT" "$R_DEPTH")
+echo $output
 shopt -u dotglob
-
