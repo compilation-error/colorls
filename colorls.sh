@@ -41,6 +41,8 @@ do
 	elif [ ${args:0:2} = "-R" ]
 	then
 		R_DEPTH="${args:2}"
+	else
+		PARENT="$args"
 	fi
 done
 
