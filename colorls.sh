@@ -49,13 +49,22 @@ done
 function print_recur {
 	for entry in "$1"*
 	do
+		cols=""
+		cole=""
 		ext_split="$entry"
 		ext="${ext_split##*.}"
 		ico="${icons[$ext]}"
+		if [ $ext = "gz" ] || [ $ext = "zip" ] || [ $ext = "tar" ] || [ $ext = "7z" ]
+		then
+			cols="\e[31m\e[1m"
+			cole="\e[0m"
+		fi
 		if [ "$ico" = "" ]
 		then
 			if [ -d $entry ]
 			then
+				cols="\e[34m\e[1m"
+				cole="\e[0m"
 				ico="${icons["dir"]}"
 			elif [ -e $entry ]
 			then
@@ -63,7 +72,7 @@ function print_recur {
 			fi
 		fi
 
-		echo "$3 $4 ${ico} $entry"
+		echo -e "$3 $4 ${ico} ${cols}${entry}${cole}"
 		if [ -d $entry ] && [ $2 -gt 0 ]
 		then
 			echo "$3    |"
