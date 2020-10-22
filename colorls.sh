@@ -61,19 +61,19 @@ function print_recur {
 		fi
 		if [ "$ico" = "" ]
 		then
-			if [ -d $entry ]
+			if [ -d "$entry" ]
 			then
 				cols="\e[34m\e[1m"
 				cole="\e[0m"
 				ico="${icons["dir"]}"
-			elif [ -e $entry ]
+			elif [ -e "$entry" ]
 			then
 				ico="${icons["file"]}"
 			fi
 		fi
 
 		echo -e "$3 $4 ${ico} ${cols}${entry}${cole}"
-		if [ -d $entry ] && [ $2 -gt 0 ]
+		if [ -d "$entry" ] && [ $2 -gt 0 ]
 		then
 			echo "$3    |"
 			print_recur "$entry/" "$(($2 - 1))" "$3   " "|"
