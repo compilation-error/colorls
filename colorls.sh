@@ -32,6 +32,7 @@ declare -A icons=(
 
 R_DEPTH=0
 PARENT=""
+VIEWLONG="0"
 
 for args in "$@"
 do
@@ -41,6 +42,9 @@ do
 	elif [ ${args:0:2} = "-R" ]
 	then
 		R_DEPTH="${args:2}"
+	elif [ "$args" = "-l" ]
+	then
+		VIEWLONG="1"
 	else
 		PARENT="$args"
 	fi
@@ -76,10 +80,23 @@ function print_recur {
 
 		if [ "${entry##*/}" != "*" ]
 		then
-			echo -e "$3 $4 ${ico} ${cols}${entry##*/}${cole}"
+			viewperm=$(stat -c '%A' "$entry")
+			if [[ "$viewperm" == *"x"* ]] && [ "$cols" = "" ]
+			then
+				cols="\e[32m\e[1m"
+				cole="\e[0m"
+			fi
+
+			if [ "$VIEWLONG" = "1" ]
+			then
+				viewperm="$viewperm "
+			else
+				viewperm=""
+			fi
+			echo -e "$3 $4 ${viewperm}${ico} ${cols}${entry##*/}${cole}"
 			if [ -d "$entry" ] && [ $2 -gt 0 ]
 			then
-				echo "$3    |"
+				#echo "$3    |"
 				print_recur "$entry/" "$(($2 - 1))" "$3   " "|"
 			fi
 		fi
