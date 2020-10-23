@@ -103,7 +103,8 @@ function print_recur {
 				else
 					spacer="$3    "
 				fi
-				print_recur "$entry/" "$(($2 - 1))" "$spacer" "|"
+				#print_recur "$entry/" "$(($2 - 1))" "$spacer" "|"
+				print_recur "$entry/" "$(($2 - 1))" "$spacer" "﬌"
 			fi
 		fi
 	done
