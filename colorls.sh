@@ -99,7 +99,8 @@ function print_recur {
 				#echo "$3    |"
 				if [ "$3" != "" ]
 				then
-					spacer="$3 :  "
+					#spacer="$3 :  "
+					spacer="$3   "
 				else
 					spacer="$3    "
 				fi
