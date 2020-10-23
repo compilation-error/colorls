@@ -56,7 +56,7 @@ function print_recur {
 		ext_split="$entry"
 		ext="${ext_split##*.}"
 		ico="${icons[$ext]}"
-		if [ $ext = "gz" ] || [ $ext = "zip" ] || [ $ext = "tar" ] || [ $ext = "7z" ]
+		if [ "$ext" = "gz" ] || [ "$ext" = "zip" ] || [ "$ext" = "tar" ] || [ "$ext" = "7z" ]
 		then
 			cols="\e[31m\e[1m"
 			cole="\e[0m"
