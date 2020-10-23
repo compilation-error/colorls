@@ -97,7 +97,13 @@ function print_recur {
 			if [ -d "$entry" ] && [ $2 -gt 0 ]
 			then
 				#echo "$3    |"
-				print_recur "$entry/" "$(($2 - 1))" "$3   " "|"
+				if [ "$3" != "" ]
+				then
+					spacer="$3 :  "
+				else
+					spacer="$3    "
+				fi
+				print_recur "$entry/" "$(($2 - 1))" "$spacer" "|"
 			fi
 		fi
 	done
