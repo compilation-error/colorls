@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import os
 import glob
 from pathlib import Path
@@ -267,3 +269,5 @@ if __name__ == "__main__":
 	if args.report:
 		print()
 		pprint.pprint(report)
+
+# vim: ts=4 sts=4 set sytax=python :
