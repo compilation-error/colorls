@@ -14,10 +14,10 @@ METRIC_MULTIPLE = 1024.
 LEND = '\t'
 SIZE = None
 SCREEN_BUFFER = 10
-ANSI_FORMATS = {'this': '1;39;49', 'dir': '34;49', 'file': '32;49', 'link': '4;36;49', 'none': '39;49',
+ANSI_FORMATS = {'this': '1;39;49', 'dir': '34;49', 'file': '32;49', 'link': '36;49', 'none': '39;49',
 				'archive': '31;49', 'mount': '37;49', 'image': '35;49', 'video': '33;49', 'audio': '33;49'}
 # https://fontawesome.com/cheatsheet/free
-ICONS = {'this'     : u'\uf07c', 'dir': u'\uf07b', 'file': u'\uf15b', 'link': u'\uf35d', 'none': u'\uf0c8',
+ICONS = {'this'     : u'\uf07c', 'dir': u'\uf07b', 'file': u'\uf15b', 'link': u'\uf838', 'none': u'\uf0c8',
          '.py'      : u'\uf81f', '.pyc': u'\uf820', '.doc': u'\uf1c2', '.docx': u'\uf1c2', '.docm': u'\uf1c2',
          '.odt'     : u'\uf1c2', '.c': u'\ue61e', '.cpp': u'\ue61d', '.vscode': u'\ue70c', '.vim': u'\ue7c5',
          '.pdf'     : u'\uf1c1', '.zip': u'\uf1c6', '.tar': u'\uf1c6', '.7z': u'\uf1c6', '.key': u'\uf084',
@@ -30,33 +30,6 @@ IMAGE_FORMATS = ['.png', '.tif', '.tiff', '.jpg', '.jpeg', '.gif']
 VIDEO_FORMATS = ['.wmv', '.mpg', '.mpeg', '.divx', '.xvid', '.mp4', '.mkv']
 AUDIO_FORMATS = ['.mp3', '.wma', '.m4a']
 
-# apple:     f179
-# android:     f17b
-# angular:     f420
-# aws:     f375
-# docker:     f395
-# git:     f841
-# github:     f09b
-# gitlab:     f296
-# js:     f3b8
-# tux:     f17c
-# ms:     f3ca
-# node:     f419
-# node-js:     f3d3
-# npm:     f3d4
-# R:     f4f7
-# Readme:     f4d5
-# rust:     e07a
-# safari:     f267
-# sass:     f41e
-# steam:     f1b6
-# usb:     f287
-# unity:     e049
-# vuejs;     f41f
-# windows:     f17a
-# ruby/gem:     f3a5
-# mounted hdd;     f0a0
-#
 
 # https://en.wikipedia.org/wiki/ANSI_escape_code
 def print_format_table():
@@ -78,9 +51,7 @@ def get_human_readable_size(size):
 
 
 def get_fmt(path):
-	name = os.path.basename(path)
-	n, ext = os.path.splitext(name)
-	n, ext = n.lower(), ext.lower()
+	name, n, ext = path.name, path.stem.lower(), path.suffix.lower()
 	if ext in ARCHIVE_FORMATS:
 		fmt_key = 'archive'
 	elif ext in IMAGE_FORMATS:
@@ -93,13 +64,13 @@ def get_fmt(path):
 		fmt_key = ext
 	elif n in ANSI_FORMATS:
 		fmt_key = n
-	elif os.path.isdir(path):
-		fmt_key = "dir"
-	elif os.path.isfile(path):
-		fmt_key = "file"
-	elif os.path.islink(path):
+	elif path.is_symlink():
 		fmt_key = "link"
-	elif os.path.ismount(path):
+	elif path.is_dir():
+		fmt_key = "dir"
+	elif path.is_file():
+		fmt_key = "file"
+	elif path.is_mount():
 		fmt_key = "mount"
 	else:
 		fmt_key = "none"
@@ -107,37 +78,46 @@ def get_fmt(path):
 
 
 def get_ico(path):
-	name = os.path.basename(path)
-	n, ext = os.path.splitext(name)
-	n, ext = n.lower(), ext.lower()
+	name, n, ext = path.name, path.stem.lower(), path.suffix.lower()
 	if ext in ICONS:
 		ico_key = ext
 	elif n in ICONS:
 		ico_key = n
-	elif os.path.isdir(path):
-		ico_key = "dir"
-	elif os.path.isfile(path):
-		ico_key = "file"
-	elif os.path.islink(path):
+	elif path.is_symlink():
 		ico_key = "link"
-	elif os.path.ismount(path):
+	elif path.is_dir():
+		ico_key = "dir"
+	elif path.is_file():
+		ico_key = "file"
+	elif path.is_mount():
 		ico_key = "mount"
 	else:
 		ico_key = "none"
 	return ICONS[ico_key]
 
 
-def print_tree_listing(path, fmt_key=None, ico_key=None, level=0, pos=0):
-	name = os.path.basename(path)
+def get_suffix(path):
+	suffix = ""
+	if path.is_symlink():
+		suffix = "@"
+	elif path.is_dir():
+		suffix = "/"
+	return suffix
+
+
+def print_tree_listing(path, fmt_key=None, ico_key=None, level=0, pos=0, suffix=""):
+	name = path.name
+	if path.is_symlink():
+		name += " -> " + str(path.resolve())
 	fmt = ANSI_FORMATS[fmt_key] if fmt_key else get_fmt(path)
 	ico = ICONS[ico_key] if ico_key else get_ico(path)
 	tree_str = "   |   " * level + "   " + u'\u25ba' + "---" #2ba1  25ba
-	print(f"\x1b[{fmt}m {tree_str} {ico} {name} \x1b[0m")
+	print(f"\x1b[{fmt}m {tree_str} {ico} {name}{suffix} \x1b[0m")
 
 
-def print_long_listing(path, fmt_key=None, ico_key=None, is_numeric=False, sep=',', end='\n'):
+def print_long_listing(path, fmt_key=None, ico_key=None, is_numeric=False, sep=',', end='\n', suffix=""):
 	try:
-		st = os.stat(path)
+		st = path.stat()
 		size = st.st_size
 		sz = get_human_readable_size(size)
 		mtime = time.ctime(st.st_mtime)
@@ -146,24 +126,26 @@ def print_long_listing(path, fmt_key=None, ico_key=None, is_numeric=False, sep='
 		gid = getgrgid(st.st_gid).gr_name if not is_numeric else str(st.st_gid)
 		hln = st.st_nlink
 
-		name = os.path.basename(path)
+		name = path.name
+		if path.is_symlink():
+			name += " -> " + str(path.resolve())
 		fmt = ANSI_FORMATS[fmt_key] if fmt_key else get_fmt(path)
 		ico = ICONS[ico_key] if ico_key else get_ico(path)
-		print(f"\x1b[{fmt}m {mode} {hln:3} {uid:4} {gid:4} {sz} {mtime} {ico} {name} \x1b[0m", sep=sep, end=end)
+		print(f"\x1b[{fmt}m {mode} {hln:3} {uid:4} {gid:4} {sz} {mtime} {ico} {name}{suffix} \x1b[0m", sep=sep, end=end)
 	except FileNotFoundError as e:
 		print(e)	# TODO: This should be a litle more graceful than throwing up the error.
 
 
-def print_short_listing(path, fmt_key=None, ico_key=None, sep=None, end=None):
-	name = os.path.basename(path)
+def print_short_listing(path, fmt_key=None, ico_key=None, sep=None, end=None, suffix=""):
+	name = path.name
 	fmt = ANSI_FORMATS[fmt_key] if fmt_key else get_fmt(path)
 	ico = ICONS[ico_key] if ico_key else get_ico(path)
 	_sep = sep if sep else len(name)
-	print(f"\x1b[{fmt}m {ico} {name:<{_sep}}\x1b[0m", end=end if end else LEND)
+	print(f"\x1b[{fmt}m {ico} {name+suffix:<{_sep}}\x1b[0m", end=end if end else LEND)
 
 
 def process_dir(directory, args, level=0, size=None):
-	rep = dict()
+	report = dict()
 	contents, files, subs = list(), list(), list()
 
 	try:
@@ -201,18 +183,17 @@ def process_dir(directory, args, level=0, size=None):
 	else:
 		max_items = 9999999
 	run = 0
-	for entry in entries:
-		if not args.all and entry.name.startswith('.'):
+	for path in entries:
+		if not args.all and path.name.startswith('.'):
 			continue
-		if args.ignore_backups and entry.name.endswith('~'):
+		if args.ignore_backups and path.name.endswith('~'):
 			continue
-		path = entry.resolve()
 		if args.long or args.numeric_uid_gid:
 			print_long_listing(path, is_numeric=args.numeric_uid_gid)
 		elif args.tree and args.tree > 0:
 			print_tree_listing(path, level=level)
 			if path.is_dir() and level < args.tree - 1:
-				process_dir(path, args, level=level+1, size=size)
+				report[path.name] = process_dir(path, args, level=level+1, size=size)
 		else:
 			print_short_listing(path, sep=longest_entry)
 			run += 1
@@ -222,12 +203,14 @@ def process_dir(directory, args, level=0, size=None):
 
 	if args.recursive:
 		for sub in subs:
-			process_dir(sub, args, size=size)
+			report[sub.name] = process_dir(sub, args, size=size)
 
 	if args.report:
+		rep = dict()
 		rep['files'] = len(files)
-		rep['subs'] = len(subs)
-		report[FILE] = rep
+		rep['dirs'] = len(subs)
+		report[directory] = rep
+	return report
 
 
 if __name__ == "__main__":
@@ -239,6 +222,8 @@ if __name__ == "__main__":
 	parser.add_argument("-d", "--directory", action="store_true", default=False,
 	                    help="list directories themselves, not their contents")
 	parser.add_argument("-f", "--file", action="store_true", default=False, help="list files only, not directories")
+	# parser.add_argument("-F", "--classify", action="store_true",
+	#                     default=False, help="append indicator (one of */=>@|) to entries")
 	parser.add_argument("-I", "--ignore", metavar="PATTERN", help="do not list implied entries matching shell PATTERN")
 	parser.add_argument("-l", "--long", action="store_true", default=False, help="use a long listing format")
 	parser.add_argument("-n", "--numeric-uid-gid", action="store_true",
@@ -247,27 +232,26 @@ if __name__ == "__main__":
 	parser.add_argument("--report", action="store_true", default=False,
 	                    help="brief report about number of files and directories")
 	parser.add_argument("-t", "--tree", metavar="DEPTH", type=int, nargs='?', const=3, help="max tree depth")
-	parser.add_argument("FILE", default=".", nargs=argparse.REMAINDER, help="directory you want to list")
+	parser.add_argument("FILE", default=".", nargs=argparse.REMAINDER,
+	                    help="List information about the FILEs (the current directory by default).")
 	args = parser.parse_args()
-	print(args)
+	# print(args)
 
 	LEND = "\n" if vars(args)['1'] else "\t"
 	try:
 		SIZE = os.get_terminal_size()
 	except Exception as e:
 		print(f"Error getting terminal size, {e}")
-	print(SIZE)
-	p = Path('.')
+
 	if not args.FILE:
 		args.FILE = ["."]
 
-	report = dict()
+	report = list()
 	for FILE in args.FILE:
-		process_dir(FILE, args, size=SIZE)
+		report.append(process_dir(FILE, args, size=SIZE))
 		print()
 
 	if args.report:
-		print()
 		pprint.pprint(report)
 
 # vim: ts=4 sts=4 set sytax=python :
