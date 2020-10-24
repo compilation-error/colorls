@@ -17,18 +17,23 @@ SCREEN_BUFFER = 10
 ANSI_FORMATS = {'this': '1;39;49', 'dir': '34;49', 'file': '32;49', 'link': '36;49', 'none': '39;49',
 				'archive': '31;49', 'mount': '37;49', 'image': '35;49', 'video': '33;49', 'audio': '33;49'}
 # https://fontawesome.com/cheatsheet/free
-ICONS = {'this'     : u'\uf07c', 'dir': u'\uf07b', 'file': u'\uf15b', 'link': u'\uf838', 'none': u'\uf0c8',
+ICONS = {'this'     : u'\uf07c', 'dir': u'\uf07b', 'file': u'\uf016', 'link': u'\uf838', 'none': u'\uf445',
+         'audio'	: u'\uf1c7', 'video': u'\uf1c8', 'image': u'\uf1c5', 'archive': u'\uf1c6',
          '.py'      : u'\uf81f', '.pyc': u'\uf820', '.doc': u'\uf1c2', '.docx': u'\uf1c2', '.docm': u'\uf1c2',
          '.odt'     : u'\uf1c2', '.c': u'\ue61e', '.cpp': u'\ue61d', '.vscode': u'\ue70c', '.vim': u'\ue7c5',
-         '.pdf'     : u'\uf1c1', '.zip': u'\uf1c6', '.tar': u'\uf1c6', '.7z': u'\uf1c6', '.key': u'\uf084',
-         '.cur'     : u'\uf245', '.sh': u'\uf1c9', '.md': u'\uf48a', '.gitignore': u'\uf841', '.git': u'\uf1d3',
-         '.AppImage': u'\uf5ba', '.Appimage': u'\uf5ba', '.exe': u'\uf3ca', '.xml': u'\uf121', '.html': u'\uf121',
-         '.r'       : u'\uf4f7', '.R': u'\uf4f7', 'README': u'\uf4d5', 'js': u'\uf3b8', '.tar.gz': u'\uf1c6',
-		 '.gz'      : u'\uf1c6', 'mount': u'\uf0a0'}
+         '.pdf'     : u'\uf1c1', '.zip': u'\uf1c6', '.tar': u'\uf1c6', '.7z': u'\uf1c6', '.key': u'\uf80a',
+         '.cur'     : u'\uf245', '.md': u'\uf48a', '.gitignore': u'\ue702', '.git': u'\ue5fb',
+         '.AppImage': u'\uf992', '.Appimage': u'\uf992', '.exe': u'\ue62a', '.xml': u'\ufabf', '.html': u'\uf121',
+         '.r'       : u'\uf4f7', '.R': u'\uf4f7', 'README': u'\ue28b', 'js': u'\ue74e', '.tar.gz': u'\uf1c6',
+		 '.gz'      : u'\uf1c6', 'mount': u'\uf0a0', '.php': u'\uf81e', '.json': u'\ufb25', '.yml': u'\ue60b',
+		 '.sh'		: u'\uf120', '.java': u'\ue738', '.jar': u'\uf53b', '.img': u'\ufaed', '.iso': u'\ufaed'}
 ARCHIVE_FORMATS = ['.zip', '.tar', '.tar.gz', '.gz', '.7z']
-IMAGE_FORMATS = ['.png', '.tif', '.tiff', '.jpg', '.jpeg', '.gif']
+IMAGE_FORMATS = ['.png', '.tif', '.tiff', '.jpg', '.jpeg', '.gif', '.bmp', '.svg']
 VIDEO_FORMATS = ['.wmv', '.mpg', '.mpeg', '.divx', '.xvid', '.mp4', '.mkv']
 AUDIO_FORMATS = ['.mp3', '.wma', '.m4a']
+DOC_FORMATS = ['.doc', '.docx', '.docm', '.odt']
+SPRDSHT_FORMATS = ['.xls', '.xlsx', '.xlsm', '.ods']
+PPT_FORMATS = ['.ppt', '.pps', '.pptx', '.odp']
 
 
 # https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -52,7 +57,11 @@ def get_human_readable_size(size):
 
 def get_fmt(path):
 	name, n, ext = path.name, path.stem.lower(), path.suffix.lower()
-	if ext in ARCHIVE_FORMATS:
+	if ext in ANSI_FORMATS:
+		fmt_key = ext
+	elif n in ANSI_FORMATS:
+		fmt_key = n
+	elif ext in ARCHIVE_FORMATS:
 		fmt_key = 'archive'
 	elif ext in IMAGE_FORMATS:
 		fmt_key = 'image'
@@ -60,10 +69,6 @@ def get_fmt(path):
 		fmt_key = 'video'
 	elif ext in AUDIO_FORMATS:
 		fmt_key = 'audio'
-	elif ext in ANSI_FORMATS:
-		fmt_key = ext
-	elif n in ANSI_FORMATS:
-		fmt_key = n
 	elif path.is_symlink():
 		fmt_key = "link"
 	elif path.is_dir():
@@ -83,6 +88,14 @@ def get_ico(path):
 		ico_key = ext
 	elif n in ICONS:
 		ico_key = n
+	elif ext in ARCHIVE_FORMATS:
+		ico_key = 'archive'
+	elif ext in IMAGE_FORMATS:
+		ico_key = 'image'
+	elif ext in VIDEO_FORMATS:
+		ico_key = 'video'
+	elif ext in AUDIO_FORMATS:
+		ico_key = 'audio'
 	elif path.is_symlink():
 		ico_key = "link"
 	elif path.is_dir():
