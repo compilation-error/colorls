@@ -25,7 +25,7 @@ ICONS = {'this'     : u'\uf07c', 'dir': u'\uf07b', 'file': u'\uf016', 'link': u'
          '.cur'     : u'\uf245', '.md': u'\uf48a', '.gitignore': u'\ue702', '.git': u'\ue5fb',
          '.AppImage': u'\uf992', '.Appimage': u'\uf992', '.exe': u'\ue62a', '.xml': u'\ufabf', '.html': u'\uf121',
          '.r'       : u'\uf4f7', '.R': u'\uf4f7', 'README': u'\ue28b', 'js': u'\ue74e', '.tar.gz': u'\uf1c6',
-		 '.gz'      : u'\uf1c6', 'mount': u'\uf0a0', '.php': u'\uf81e', '.json': u'\ufb25', '.yml': u'\ue60b',
+		 '.gz'      : u'\uf1c6', 'mount': u'\uf0a0', '.php': u'\uf81e', '.json': u'\ue60b', '.yml': u'\ue60b',
 		 '.sh'		: u'\uf120', '.java': u'\ue738', '.jar': u'\uf53b', '.img': u'\ufaed', '.iso': u'\ufaed'}
 ARCHIVE_FORMATS = ['.zip', '.tar', '.tar.gz', '.gz', '.7z']
 IMAGE_FORMATS = ['.png', '.tif', '.tiff', '.jpg', '.jpeg', '.gif', '.bmp', '.svg']
