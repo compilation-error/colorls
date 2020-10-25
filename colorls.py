@@ -153,7 +153,7 @@ def print_short_listing(path, fmt_key=None, ico_key=None, sep=None, end=None, su
 	name = path.name
 	fmt = ANSI_FORMATS[fmt_key] if fmt_key else get_fmt(path)
 	ico = ICONS[ico_key] if ico_key else get_ico(path)
-	_sep = sep if sep else len(name)
+	_sep = sep if sep else len(name) + 1
 	print(f"\x1b[{fmt}m {ico} {name+suffix:<{_sep}}\x1b[0m", end=end if end else LEND)
 
 
@@ -267,4 +267,4 @@ if __name__ == "__main__":
 	if args.report:
 		pprint.pprint(report)
 
-# vim: ts=4 sts=4 set sytax=python :
+# vim: ts=4 sts=4 syntax=python :
