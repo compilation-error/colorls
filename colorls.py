@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# -*- coding: utf-8 - *-
 
 import os
 import glob
@@ -9,14 +10,19 @@ import time
 from pwd import getpwuid
 from grp import getgrgid
 
+
+__author__ = "Romeet Chhabra"
+__copyright__ = "Copyright 2020, Romeet Chhabra"
+__license__ = "MIT"
+__version__ = "0.1.0"
+
+
 METRIC_PREFIXES = ['b', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
-METRIC_MULTIPLE = 1024.
-LEND = '\t'
-SIZE = None
-SCREEN_BUFFER = 10
-ANSI_FORMATS = {'this': '1;39;49', 'dir': '34;49', 'file': '32;49', 'link': '36;49', 'none': '39;49',
+METRIC_MULTIPLE = 1024.     # should be 1000. for SI
+
+SUFF = {'dir': '/', 'link': '@', 'exe': '*', 'none': '', 'file': '', 'mount': '', 'this': ''}
+ANSI = {'this': '1;39;49', 'dir': '34;49', 'file': '32;49', 'link': '36;49', 'none': '39;49',
                 'archive': '31;49', 'mount': '37;49', 'image': '35;49', 'video': '33;49', 'audio': '33;49'}
-# https://fontawesome.com/cheatsheet/free
 ICONS = {'this'     : u'\uf07c', 'dir': u'\uf07b', 'file': u'\uf016', 'link': u'\uf838', 'none': u'\uf445',
          'audio'    : u'\uf1c7', 'video': u'\uf1c8', 'image': u'\uf1c5', 'archive': u'\uf1c6',
          '.py'      : u'\uf81f', '.pyc': u'\uf820', '.doc': u'\uf1c2', '.docx': u'\uf1c2', '.docm': u'\uf1c2',
@@ -42,8 +48,8 @@ def print_format_table():
         for fg in range(30, 40):
             s1 = ''
             for bg in range(40, 50):
-                format = ';'.join([str(style), str(fg), str(bg)])
-                s1 += '\x1b[%sm %s \x1b[0m' % (format, format)
+                fmt = ';'.join([str(style), str(fg), str(bg)])
+                s1 += f'\x1b[{fmt}m {fmt} \x1b[0m'
             print(s1)
         print('\n')
 
@@ -55,80 +61,47 @@ def get_human_readable_size(size):
         size /= METRIC_MULTIPLE
 
 
-def get_fmt(path):
+# TODO: This can be improved - for the category mapping at least. Maybe use a reverse dictionay?
+def get_keys(path):
+    key1, key2 = 'none', 'none'
     name, n, ext = path.name, path.stem.lower(), path.suffix.lower()
-    if ext in ANSI_FORMATS:
-        fmt_key = ext
-    elif n in ANSI_FORMATS:
-        fmt_key = n
+    if ext in ANSI:
+        key1 = ext
+    elif n in ANSI:
+        key1 = n
     elif ext in ARCHIVE_FORMATS:
-        fmt_key = 'archive'
+        key1 = 'archive'
     elif ext in IMAGE_FORMATS:
-        fmt_key = 'image'
+        key1 = 'image'
     elif ext in VIDEO_FORMATS:
-        fmt_key = 'video'
+        key1 = 'video'
     elif ext in AUDIO_FORMATS:
-        fmt_key = 'audio'
+        key1 = 'audio'
     elif path.is_symlink():
-        fmt_key = "link"
+        key1 = "link"
     elif path.is_dir():
-        fmt_key = "dir"
+        key1 = "dir"
     elif path.is_file():
-        fmt_key = "file"
+        key1 = "file"
     elif path.is_mount():
-        fmt_key = "mount"
+        key1 = "mount"
     else:
-        fmt_key = "none"
-    return ANSI_FORMATS[fmt_key]
-
-
-def get_ico(path):
-    name, n, ext = path.name, path.stem.lower(), path.suffix.lower()
+        key1 = "none"
+    key2 = key1
     if ext in ICONS:
-        ico_key = ext
+        key2 = ext
     elif n in ICONS:
-        ico_key = n
-    elif ext in ARCHIVE_FORMATS:
-        ico_key = 'archive'
-    elif ext in IMAGE_FORMATS:
-        ico_key = 'image'
-    elif ext in VIDEO_FORMATS:
-        ico_key = 'video'
-    elif ext in AUDIO_FORMATS:
-        ico_key = 'audio'
-    elif path.is_symlink():
-        ico_key = "link"
-    elif path.is_dir():
-        ico_key = "dir"
-    elif path.is_file():
-        ico_key = "file"
-    elif path.is_mount():
-        ico_key = "mount"
-    else:
-        ico_key = "none"
-    return ICONS[ico_key]
-
-
-def get_suffix(path):
-    suffix = ""
-    if path.is_symlink():
-        suffix = "@"
-    elif path.is_dir():
-        suffix = "/"
-    return suffix
+        key2 = n
+    return key1, key2
 
 
 def print_tree_listing(path, fmt_key=None, ico_key=None, level=0, pos=0, suffix=""):
-    name = path.name
-    if path.is_symlink():
-        name += " -> " + str(path.resolve())
-    fmt = ANSI_FORMATS[fmt_key] if fmt_key else get_fmt(path)
-    ico = ICONS[ico_key] if ico_key else get_ico(path)
-    tree_str = "   |   " * level + "   " + u'\u25ba' + "---" #2ba1  25ba
-    print(f"\x1b[{fmt}m {tree_str} {ico} {name}{suffix} \x1b[0m")
+    tree_str = "   |   " * level + "   " + u'\u25ba' + "---"
+    print(tree_str, end="")
+    print_short_listing(path, expand=True, end='\n')
 
 
-def print_long_listing(path, fmt_key=None, ico_key=None, is_numeric=False, sep=',', end='\n', suffix=""):
+def print_long_listing(path, is_numeric=False):
     try:
         st = path.stat()
         size = st.st_size
@@ -138,23 +111,21 @@ def print_long_listing(path, fmt_key=None, ico_key=None, is_numeric=False, sep='
         uid = getpwuid(st.st_uid).pw_name if not is_numeric else str(st.st_uid)
         gid = getgrgid(st.st_gid).gr_name if not is_numeric else str(st.st_gid)
         hln = st.st_nlink
-
-        name = path.name
-        if path.is_symlink():
-            name += " -> " + str(path.resolve())
-        fmt = ANSI_FORMATS[fmt_key] if fmt_key else get_fmt(path)
-        ico = ICONS[ico_key] if ico_key else get_ico(path)
-        print(f"\x1b[{fmt}m {mode} {hln:3} {uid:4} {gid:4} {sz} {mtime} {ico} {name}{suffix} \x1b[0m", sep=sep, end=end)
+        print(f"{mode} {hln:3} {uid:4} {gid:4} {sz} {mtime} ", end="")
+        print_short_listing(path, expand=True, end='\n')
     except FileNotFoundError as e:
-        print(e)    # TODO: This should be a litle more graceful than throwing up the error.
+        ...    # TODO: Handle this better. What feedback should be given to the user?
 
 
-def print_short_listing(path, fmt_key=None, ico_key=None, sep=None, end=None, suffix=""):
+def print_short_listing(path, fmt_key=None, ico_key=None, expand=False, tag=False, sep_len=None, end='\t'):
+    fmt, ico = get_keys(path)
     name = path.name
-    fmt = ANSI_FORMATS[fmt_key] if fmt_key else get_fmt(path)
-    ico = ICONS[ico_key] if ico_key else get_ico(path)
-    _sep = sep if sep else len(name) + 1
-    print(f"\x1b[{fmt}m {ico} {name+suffix:<{_sep}}\x1b[0m", end=end if end else LEND)
+    if expand and path.is_symlink():
+        name += " -> " + str(path.resolve())
+    name += SUFF[fmt] if tag else ""
+    # Pretty certain using default sep_len is going to create issues
+    sep_len = sep_len if sep_len else len(name) + 1
+    print(f"\x1b[{ANSI[fmt]}m {ICONS[ico]} {name:<{sep_len}}\x1b[0m", end=end)
 
 
 def process_dir(directory, args, level=0, size=None):
@@ -178,7 +149,7 @@ def process_dir(directory, args, level=0, size=None):
         else:
             contents = list(Path('.').glob(directory))
     except Exception as e:
-        print(f"{e=}")  #TODO: This should be a little more graceful as well!
+        ...  #TODO: This should be a little more graceful!
 
     contents = sorted(contents)
 
@@ -192,10 +163,11 @@ def process_dir(directory, args, level=0, size=None):
     # TODO: A more elegent solution to aligning short print listing. This is an aweful hack!
     longest_entry = max([len(str(x.name)) for x in entries]) if len(entries) > 0 else None
     if longest_entry and size:
-        max_items = size[0] // (longest_entry + SCREEN_BUFFER)
+        max_items = size[0] // (longest_entry + 10)     # 10 is just a buffer amount. can be updated if not pretty
     else:
         max_items = 9999999
     run = 0
+    end = "\n" if vars(args)['1'] else "\t"
     for path in entries:
         if not args.all and path.name.startswith('.'):
             continue
@@ -206,17 +178,17 @@ def process_dir(directory, args, level=0, size=None):
         elif args.tree and args.tree > 0:
             print_tree_listing(path, level=level)
             if path.is_dir() and level < args.tree - 1:
-                report[path.name] = process_dir(path, args, level=level+1, size=size)
+                report['/' + path.name] = process_dir(path, args, level=level+1, size=size)[path]
         else:
-            print_short_listing(path, sep=longest_entry)
+            print_short_listing(path, sep_len=longest_entry, tag=args.classify, end=end)
             run += 1
             if run >= max_items:
                 print()
                 run = 0
 
-    if args.recursive:
+    if args.recursive and not args.tree:
         for sub in subs:
-            report[sub.name] = process_dir(sub, args, size=size)
+            report['/' + sub.name] = process_dir(sub, args, size=size)[sub]
 
     if args.report:
         rep = dict()
@@ -235,8 +207,8 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--directory", action="store_true", default=False,
                         help="list directories themselves, not their contents")
     parser.add_argument("-f", "--file", action="store_true", default=False, help="list files only, not directories")
-    # parser.add_argument("-F", "--classify", action="store_true",
-    #                     default=False, help="append indicator (one of */=>@|) to entries")
+    parser.add_argument("-F", "--classify", action="store_true",
+                         default=False, help="append indicator (one of */=>@|) to entries")
     parser.add_argument("-I", "--ignore", metavar="PATTERN", help="do not list implied entries matching shell PATTERN")
     parser.add_argument("-l", "--long", action="store_true", default=False, help="use a long listing format")
     parser.add_argument("-n", "--numeric-uid-gid", action="store_true",
@@ -245,26 +217,31 @@ if __name__ == "__main__":
     parser.add_argument("--report", action="store_true", default=False,
                         help="brief report about number of files and directories")
     parser.add_argument("-t", "--tree", metavar="DEPTH", type=int, nargs='?', const=3, help="max tree depth")
+    parser.add_argument("--version", action="store_true", default=False, help="display current version number")
     parser.add_argument("FILE", default=".", nargs=argparse.REMAINDER,
                         help="List information about the FILEs (the current directory by default).")
     args = parser.parse_args()
-    # print(args)
+    if args.version:
+        print("colorls.py version " + __version__)
 
-    LEND = "\n" if vars(args)['1'] else "\t"
     try:
-        SIZE = os.get_terminal_size()
+        term_size = os.get_terminal_size()
     except Exception as e:
-        print(f"Error getting terminal size, {e}")
+        ...     # this can be quiet, since this is optional, sorta
 
     if not args.FILE:
         args.FILE = ["."]
 
     report = list()
     for FILE in args.FILE:
-        report.append(process_dir(FILE, args, size=SIZE))
+        report.append(process_dir(FILE, args, size=term_size))
         print()
 
-    if args.report:
-        pprint.pprint(report)
+    # TODO: Fix report - only shows current directory and next correctly. Likely overwritten dictionary values
+    if args.report and report:
+        print("\n --- REPORT ---")
+        for n in report:
+            for k,v in reversed(n.items()):
+                print(f"{k} -> {v}")
 
 # vim: ts=4 sts=4 sw=4 et syntax=python:
