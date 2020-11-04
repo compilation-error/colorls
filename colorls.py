@@ -23,7 +23,7 @@ METRIC_MULTIPLE = 1024.     # should be 1000. for SI
 SUFF = {'dir': '/', 'link': '@', 'exe': '*', 'none': '', 'file': '', 'mount': '', 'this': ''}
 ANSI = {'this': '1;39;49', 'dir': '34;49', 'file': '32;49', 'link': '36;49', 'none': '39;49',
                 'archive': '31;49', 'mount': '37;49', 'image': '35;49', 'video': '33;49', 'audio': '33;49'}
-ICONS = {'this'     : u'\uf07c', 'dir': u'\uf07b', 'file': u'\uf016', 'link': u'\uf838', 'none': u'\uf445',
+ICONS = {'this'     : u'\uf07c', 'dir': u'\uf07b', 'file': u'\uf016', 'link': u'\uf838', 'none': '',
          'audio'    : u'\uf1c7', 'video': u'\uf1c8', 'image': u'\uf1c5', 'archive': u'\uf1c6',
          '.py'      : u'\uf81f', '.pyc': u'\uf820', '.doc': u'\uf1c2', '.docx': u'\uf1c2', '.docm': u'\uf1c2',
          '.odt'     : u'\uf1c2', '.c': u'\ue61e', '.cpp': u'\ue61d', '.vscode': u'\ue70c', '.vim': u'\ue7c5',
@@ -95,13 +95,13 @@ def get_keys(path):
     return key1, key2
 
 
-def print_tree_listing(path, fmt_key=None, ico_key=None, level=0, pos=0, suffix=""):
+def print_tree_listing(path, level=0, pos=0, tag=False, clear=False):
     tree_str = "   |   " * level + "   " + u'\u25ba' + "---"
     print(tree_str, end="")
-    print_short_listing(path, expand=True, end='\n')
+    print_short_listing(path, expand=True, tag=tag, clear=clear, end='\n')
 
 
-def print_long_listing(path, is_numeric=False):
+def print_long_listing(path, is_numeric=False, tag=False, clear=False):
     try:
         st = path.stat()
         size = st.st_size
@@ -112,24 +112,27 @@ def print_long_listing(path, is_numeric=False):
         gid = getgrgid(st.st_gid).gr_name if not is_numeric else str(st.st_gid)
         hln = st.st_nlink
         print(f"{mode} {hln:3} {uid:4} {gid:4} {sz} {mtime} ", end="")
-        print_short_listing(path, expand=True, end='\n')
+        print_short_listing(path, expand=True, tag=tag, clear=clear, end='\n')
     except FileNotFoundError as e:
         ...    # TODO: Handle this better. What feedback should be given to the user?
 
 
-def print_short_listing(path, fmt_key=None, ico_key=None, expand=False, tag=False, sep_len=None, end='\t'):
-    fmt, ico = get_keys(path)
-    name = path.name
+def print_short_listing(path, expand=False, tag=False, clear=False, sep_len=None, end='\t'):
+    if clear:
+        fmt, ico = 'none', 'none'
+    else:
+        fmt, ico = get_keys(path)
+    name = path.name + (SUFF[fmt] if tag else "")
     if expand and path.is_symlink():
         name += " -> " + str(path.resolve())
-    name += SUFF[fmt] if tag else ""
     # Pretty certain using default sep_len is going to create issues
-    sep_len = sep_len if sep_len else len(name) + 1
-    print(f"\x1b[{ANSI[fmt]}m {ICONS[ico]} {name:<{sep_len}}\x1b[0m", end=end)
+    sep_len = sep_len if sep_len else len(name)
+    print(f"\x1b[{ANSI[fmt]}m{' ' + ICONS[ico] + ' '}{name:<{sep_len}}\x1b[0m", end=end)
 
 
 def process_dir(directory, args, level=0, size=None):
     report = dict()
+    end = '\n' if vars(args)['1'] else '\t'
     contents, files, subs = list(), list(), list()
 
     try:
@@ -137,7 +140,7 @@ def process_dir(directory, args, level=0, size=None):
         if p.exists() and p.is_dir():
             if level == 0:
                 print()
-                print_short_listing(p.absolute(), fmt_key='this', ico_key='this', end=':\n')
+                print_short_listing(p.absolute(), clear=True, end=':\n')
             contents = list(p.iterdir())
             if args.ignore:
                 remove_list = list(p.glob(args.ignore))
@@ -167,18 +170,17 @@ def process_dir(directory, args, level=0, size=None):
     else:
         max_items = 9999999
     run = 0
-    end = "\n" if vars(args)['1'] else "\t"
     for path in entries:
         if not args.all and path.name.startswith('.'):
             continue
         if args.ignore_backups and path.name.endswith('~'):
             continue
         if args.long or args.numeric_uid_gid:
-            print_long_listing(path, is_numeric=args.numeric_uid_gid)
+            print_long_listing(path, is_numeric=args.numeric_uid_gid, tag=args.classify)
         elif args.tree and args.tree > 0:
-            print_tree_listing(path, level=level)
+            print_tree_listing(path, level=level, tag=args.classify)
             if path.is_dir() and level < args.tree - 1:
-                report['/' + path.name] = process_dir(path, args, level=level+1, size=size)[path]
+                report[path.name] = process_dir(path, args, level=level+1, size=size)[path]
         else:
             print_short_listing(path, sep_len=longest_entry, tag=args.classify, end=end)
             run += 1
@@ -188,7 +190,7 @@ def process_dir(directory, args, level=0, size=None):
 
     if args.recursive and not args.tree:
         for sub in subs:
-            report['/' + sub.name] = process_dir(sub, args, size=size)[sub]
+            report[sub.name] = process_dir(sub, args, size=size)[sub]
 
     rep = dict()
     rep['files'] = len(files)
