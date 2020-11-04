@@ -190,11 +190,10 @@ def process_dir(directory, args, level=0, size=None):
         for sub in subs:
             report['/' + sub.name] = process_dir(sub, args, size=size)[sub]
 
-    if args.report:
-        rep = dict()
-        rep['files'] = len(files)
-        rep['dirs'] = len(subs)
-        report[directory] = rep
+    rep = dict()
+    rep['files'] = len(files)
+    rep['dirs'] = len(subs)
+    report[directory] = rep
     return report
 
 
