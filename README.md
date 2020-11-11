@@ -13,3 +13,5 @@ Download colorls.py and create alias to it
 - Python 3.8 or higher
 - Nerd Fonts
 
+## License
+MIT
