@@ -2,13 +2,19 @@
 # -*- coding: utf-8 - *-
 
 import os
+import sys
 import glob
 from pathlib import Path
 import argparse
 import pprint
 import time
-from pwd import getpwuid
-from grp import getgrgid
+
+
+UID_SUPPORT = False
+if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
+    from pwd import getpwuid
+    from grp import getgrgid
+    UID_SUPPORT = True
 
 
 __author__ = "Romeet Chhabra"
@@ -18,7 +24,8 @@ __version__ = "0.1.0"
 
 
 METRIC_PREFIXES = ['b', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
-METRIC_MULTIPLE = 1024.     # should be 1000. for SI
+METRIC_MULTIPLE = 1024.
+SI_MULTIPLE = 1000.
 
 SUFF = {'dir': '/', 'link': '@', 'exe': '*', 'none': '', 'file': '', 'mount': '', 'this': ''}
 ANSI = {'this': '1;39;49', 'dir': '34;49', 'file': '32;49', 'link': '36;49', 'none': '39;49',
@@ -54,11 +61,11 @@ def print_format_table():
         print('\n')
 
 
-def get_human_readable_size(size):
+def get_human_readable_size(size, base=METRIC_MULTIPLE):
     for pre in METRIC_PREFIXES:
-        if size < METRIC_MULTIPLE:
+        if size < base:
             return f"{size:4.0f}{pre}"
-        size /= METRIC_MULTIPLE
+        size /= base
 
 
 # TODO: This can be improved - for the category mapping at least. Maybe use a reverse dictionay?
@@ -101,20 +108,23 @@ def print_tree_listing(path, level=0, pos=0, tag=False, clear=False):
     print_short_listing(path, expand=True, tag=tag, clear=clear, end='\n')
 
 
-def print_long_listing(path, is_numeric=False, tag=False, clear=False):
+def print_long_listing(path, is_numeric=False, size_base=None, tag=False, clear=False):
     try:
         st = path.stat()
         size = st.st_size
-        sz = get_human_readable_size(size)
+        sz = get_human_readable_size(size, size_base if size_base else METRIC_MULTIPLE)
         mtime = time.ctime(st.st_mtime)
         mode = os.path.stat.filemode(st.st_mode)
-        uid = getpwuid(st.st_uid).pw_name if not is_numeric else str(st.st_uid)
-        gid = getgrgid(st.st_gid).gr_name if not is_numeric else str(st.st_gid)
+        ug_string = ""
+        if UID_SUPPORT:
+            uid = getpwuid(st.st_uid).pw_name if not is_numeric else str(st.st_uid)
+            gid = getgrgid(st.st_gid).gr_name if not is_numeric else str(st.st_gid)
+            ug_string = f"{uid:4} {gid:4}"
         hln = st.st_nlink
-        print(f"{mode} {hln:3} {uid:4} {gid:4} {sz} {mtime} ", end="")
+        print(f"{mode} {hln:3} {ug_string} {sz} {mtime} ", end="")
         print_short_listing(path, expand=True, tag=tag, clear=clear, end='\n')
-    except FileNotFoundError as e:
-        ...    # TODO: Handle this better. What feedback should be given to the user?
+    except FileNotFoundError:
+        ...
 
 
 def print_short_listing(path, expand=False, tag=False, clear=False, sep_len=None, end='\t'):
@@ -152,7 +162,7 @@ def process_dir(directory, args, level=0, size=None):
         else:
             contents = list(Path('.').glob(directory))
     except Exception as e:
-        ...  #TODO: This should be a little more graceful!
+        print(e, file=sys.stderr)
 
     contents = sorted(contents)
 
@@ -176,7 +186,10 @@ def process_dir(directory, args, level=0, size=None):
         if args.ignore_backups and path.name.endswith('~'):
             continue
         if args.long or args.numeric_uid_gid:
-            print_long_listing(path, is_numeric=args.numeric_uid_gid, tag=args.classify)
+            if args.si:
+                print_long_listing(path, is_numeric=args.numeric_uid_gid, size_base=SI_MULTIPLE, tag=args.classify)
+            else:    
+                print_long_listing(path, is_numeric=args.numeric_uid_gid, tag=args.classify)
         elif args.tree and args.tree > 0:
             print_tree_listing(path, level=level, tag=args.classify)
             if path.is_dir() and level < args.tree - 1:
@@ -219,6 +232,7 @@ if __name__ == "__main__":
                         help="brief report about number of files and directories")
     parser.add_argument("-t", "--tree", metavar="DEPTH", type=int, nargs='?', const=3, help="max tree depth")
     parser.add_argument("--version", action="store_true", default=False, help="display current version number")
+    parser.add_argument("--si", action="store_true", default=False, help="display current version number")
     parser.add_argument("FILE", default=".", nargs=argparse.REMAINDER,
                         help="List information about the FILEs (the current directory by default).")
     args = parser.parse_args()
