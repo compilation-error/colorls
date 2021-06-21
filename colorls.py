@@ -3,11 +3,10 @@
 
 import os
 import sys
-import glob
 from pathlib import Path
 import argparse
-import pprint
 import time
+from configparser import ConfigParser
 
 
 UID_SUPPORT = False
@@ -20,33 +19,20 @@ if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
 __author__ = "Romeet Chhabra"
 __copyright__ = "Copyright 2020, Romeet Chhabra"
 __license__ = "MIT"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 METRIC_PREFIXES = ['b', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
 METRIC_MULTIPLE = 1024.
 SI_MULTIPLE = 1000.
 
-SUFF = {'dir': '/', 'link': '@', 'exe': '*', 'none': '', 'file': '', 'mount': '', 'this': ''}
-ANSI = {'this': '1;39;49', 'dir': '34;49', 'file': '32;49', 'link': '36;49', 'none': '39;49',
-                'archive': '31;49', 'mount': '37;49', 'image': '35;49', 'video': '33;49', 'audio': '33;49'}
-ICONS = {'this'     : u'\uf07c', 'dir': u'\uf07b', 'file': u'\uf016', 'link': u'\uf838', 'none': '',
-         'audio'    : u'\uf1c7', 'video': u'\uf1c8', 'image': u'\uf1c5', 'archive': u'\uf1c6',
-         '.py'      : u'\uf81f', '.pyc': u'\uf820', '.doc': u'\uf1c2', '.docx': u'\uf1c2', '.docm': u'\uf1c2',
-         '.odt'     : u'\uf1c2', '.c': u'\ue61e', '.cpp': u'\ue61d', '.vscode': u'\ue70c', '.vim': u'\ue7c5',
-         '.pdf'     : u'\uf1c1', '.zip': u'\uf1c6', '.tar': u'\uf1c6', '.7z': u'\uf1c6', '.key': u'\uf80a',
-         '.cur'     : u'\uf245', '.md': u'\uf48a', '.gitignore': u'\ue702', '.git': u'\ue5fb',
-         '.AppImage': u'\uf992', '.Appimage': u'\uf992', '.exe': u'\ue62a', '.xml': u'\ufabf', '.html': u'\uf121',
-         '.r'       : u'\uf4f7', '.R': u'\uf4f7', 'README': u'\ue28b', 'js': u'\ue74e', '.tar.gz': u'\uf1c6',
-         '.gz'      : u'\uf1c6', 'mount': u'\uf0a0', '.php': u'\uf81e', '.json': u'\ue60b', '.yml': u'\ue60b',
-         '.sh'      : u'\uf120', '.java': u'\ue738', '.jar': u'\uf53b', '.img': u'\ufaed', '.iso': u'\ufaed'}
-ARCHIVE_FORMATS = ['.zip', '.tar', '.tar.gz', '.gz', '.7z']
-IMAGE_FORMATS = ['.png', '.tif', '.tiff', '.jpg', '.jpeg', '.gif', '.bmp', '.svg']
-VIDEO_FORMATS = ['.wmv', '.mpg', '.mpeg', '.divx', '.xvid', '.mp4', '.mkv']
-AUDIO_FORMATS = ['.mp3', '.wma', '.m4a']
-DOC_FORMATS = ['.doc', '.docx', '.docm', '.odt']
-SPRDSHT_FORMATS = ['.xls', '.xlsx', '.xlsm', '.ods']
-PPT_FORMATS = ['.ppt', '.pps', '.pptx', '.odp']
+def get_config(path="./colorls.ini"):
+    config = ConfigParser()
+    config.read(path)
+    return dict(config['FORMATTING']), dict(config['ICONS']), dict(config['ALIASES'])
+
+ANSI, ICONS, ALIAS = get_config()
+SUFFIX = {'dir': '/', 'link': '@', 'exe': '*', 'mount': '^', 'hidden': '_'}
 
 
 # https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -68,23 +54,14 @@ def get_human_readable_size(size, base=METRIC_MULTIPLE):
         size /= base
 
 
-# TODO: This can be improved - for the category mapping at least. Maybe use a reverse dictionay?
 def get_keys(path):
-    key1, key2 = 'none', 'none'
-    name, n, ext = path.name, path.stem.lower(), path.suffix.lower()
-    if ext in ANSI:
-        key1 = ext
-    elif n in ANSI:
-        key1 = n
-    elif ext in ARCHIVE_FORMATS:
-        key1 = 'archive'
-    elif ext in IMAGE_FORMATS:
-        key1 = 'image'
-    elif ext in VIDEO_FORMATS:
-        key1 = 'video'
-    elif ext in AUDIO_FORMATS:
-        key1 = 'audio'
-    elif path.is_symlink():
+    n, ext = path.stem.lower(), path.suffix.lower()
+    if ext == '':
+        ext = n
+    if ext.startswith('.'):
+        ext = ext[1:]       # Remove leading period
+
+    if path.is_symlink():
         key1 = "link"
     elif path.is_dir():
         key1 = "dir"
@@ -92,13 +69,17 @@ def get_keys(path):
         key1 = "file"
     elif path.is_mount():
         key1 = "mount"
+    elif n.startswith('.'):
+        key1 = "hidden"
     else:
         key1 = "none"
-    key2 = key1
-    if ext in ICONS:
-        key2 = ext
-    elif n in ICONS:
-        key2 = n
+    
+    if ext in ALIAS:
+        if ALIAS[ext] in ANSI:
+            key1 = ALIAS[ext]
+        key2 = ALIAS[ext]
+    else:
+        key2 = key1
     return key1, key2
 
 
@@ -132,12 +113,12 @@ def print_short_listing(path, expand=False, tag=False, clear=False, sep_len=None
         fmt, ico = 'none', 'none'
     else:
         fmt, ico = get_keys(path)
-    name = path.name + (SUFF[fmt] if tag else "")
+    name = path.name + (SUFFIX.get(fmt, '') if tag else "")
     if expand and path.is_symlink():
         name += " -> " + str(path.resolve())
     # Pretty certain using default sep_len is going to create issues
     sep_len = sep_len if sep_len else len(name)
-    print(f"\x1b[{ANSI[fmt]}m{' ' + ICONS[ico] + ' '}{name:<{sep_len}}\x1b[0m", end=end)
+    print(f"\x1b[{ANSI[fmt]}m{' ' + ICONS.get(ico, '') + '  '}{name:<{sep_len}}\x1b[0m", end=end)
 
 
 def process_dir(directory, args, level=0, size=None):
@@ -173,7 +154,7 @@ def process_dir(directory, args, level=0, size=None):
     else:
         entries = contents
 
-    # TODO: A more elegent solution to aligning short print listing. This is an aweful hack!
+    # TODO: A more elegant solution to aligning short print listing. This is an awful hack!
     longest_entry = max([len(str(x.name)) for x in entries]) if len(entries) > 0 else None
     if longest_entry and size:
         max_items = size[0] // (longest_entry + 10)     # 10 is just a buffer amount. can be updated if not pretty
