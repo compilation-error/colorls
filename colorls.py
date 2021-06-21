@@ -1,5 +1,10 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 - *-
+__author__ = "Romeet Chhabra"
+__copyright__ = "Copyright 2020, Romeet Chhabra"
+__license__ = "MIT"
+__version__ = "0.2.0"
+
 
 import os
 import sys
@@ -7,32 +12,6 @@ from pathlib import Path
 import argparse
 import time
 from configparser import ConfigParser
-
-
-UID_SUPPORT = False
-if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
-    from pwd import getpwuid
-    from grp import getgrgid
-    UID_SUPPORT = True
-
-
-__author__ = "Romeet Chhabra"
-__copyright__ = "Copyright 2020, Romeet Chhabra"
-__license__ = "MIT"
-__version__ = "0.2.0"
-
-
-METRIC_PREFIXES = ['b', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
-METRIC_MULTIPLE = 1024.
-SI_MULTIPLE = 1000.
-
-def get_config(path="./colorls.ini"):
-    config = ConfigParser()
-    config.read(path)
-    return dict(config['FORMATTING']), dict(config['ICONS']), dict(config['ALIASES'])
-
-ANSI, ICONS, ALIAS = get_config()
-SUFFIX = {'dir': '/', 'link': '@', 'exe': '*', 'mount': '^', 'hidden': '_'}
 
 
 # https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -46,6 +25,26 @@ def print_format_table():
             print(s1)
         print('\n')
 
+
+def get_config(path="./colorls.ini"):
+    config = ConfigParser()
+    config.read(path)
+    return dict(config['FORMATTING']), dict(config['ICONS']), dict(config['ALIASES'])
+
+ANSI, ICONS, ALIAS = get_config()
+SUFFIX = {'dir': '/', 'link': '@', 'exe': '*', 'mount': '^'}
+
+
+UID_SUPPORT = False
+if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
+    from pwd import getpwuid
+    from grp import getgrgid
+    UID_SUPPORT = True
+
+    
+METRIC_PREFIXES = ['b', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
+METRIC_MULTIPLE = 1024.
+SI_MULTIPLE = 1000.
 
 def get_human_readable_size(size, base=METRIC_MULTIPLE):
     for pre in METRIC_PREFIXES:
@@ -80,7 +79,7 @@ def get_keys(path):
         key2 = ALIAS[ext]
     else:
         key2 = key1
-    return key1, key2
+    return key1.lower(), key2.lower()
 
 
 def print_tree_listing(path, level=0, pos=0, tag=False, clear=False):
@@ -223,7 +222,7 @@ if __name__ == "__main__":
     try:
         term_size = os.get_terminal_size()
     except Exception as e:
-        ...     # this can be quiet, since this is optional, sorta
+        ...     # this can be quiet, since this is optional
 
     if not args.FILE:
         args.FILE = ["."]
