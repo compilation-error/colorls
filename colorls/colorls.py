@@ -7,6 +7,7 @@ __version__ = "0.2.0"
 
 
 import os
+from posixpath import expanduser
 import sys
 from pathlib import Path
 import argparse
@@ -26,9 +27,11 @@ def print_format_table():
         print('\n')
 
 
-def get_config(path="./colorls.ini"):
+def get_config():
     config = ConfigParser()
-    config.read(path)
+    config.read([os.path.join(Path(__file__).parent.absolute(), '../config/colorls.ini'), 
+                os.path.expanduser('~/.config/colorls.ini'), 
+                os.path.expanduser('~/.colorls.ini')])
     return dict(config['FORMATTING']), dict(config['ICONS']), dict(config['ALIASES'])
 
 ANSI, ICONS, ALIAS = get_config()
