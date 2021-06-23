@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="colorls",
-    version="0.1.1",
+    version="0.1.11",
     author="Romeet Chhabra",
     author_email="romeetc@gmail.com",
     description="Pure Python implementation of subset of ls command with colors and icons",
@@ -26,9 +26,9 @@ setuptools.setup(
     python_requires=">=3.8",
     entry_points={
         "console_scripts": [
-            "colorls=colorls.colorls",
+            "colorls=colorls.colorls:main",
         ],
     },
-    data_files=[(os.path.expanduser('~/.colorls.ini'), ['config/colorls.ini']),
+    data_files=[('config', ['config/colorls.ini']),
     ],
 )

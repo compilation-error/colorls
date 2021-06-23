@@ -9,6 +9,7 @@ __version__ = "0.2.0"
 import os
 from posixpath import expanduser
 import sys
+import site
 from pathlib import Path
 import argparse
 import time
@@ -29,7 +30,8 @@ def print_format_table():
 
 def get_config():
     config = ConfigParser()
-    config.read([os.path.join(Path(__file__).parent.absolute(), '../config/colorls.ini'), 
+    config.read([os.path.join(site.USER_BASE, 'config/colorls.ini'), 
+                os.path.join(Path(__file__).parent.absolute(), '../config/colorls.ini'), 
                 os.path.expanduser('~/.config/colorls.ini'), 
                 os.path.expanduser('~/.colorls.ini')])
     return dict(config['FORMATTING']), dict(config['ICONS']), dict(config['ALIASES'])
@@ -195,7 +197,7 @@ def process_dir(directory, args, level=0, size=None):
     return report
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-1", action="store_true", default=False, help="list items on individual lines")
     parser.add_argument("-a", "--all", action="store_true", default=False, help="do not ignore entires starting with .")
@@ -241,5 +243,10 @@ if __name__ == "__main__":
         for n in report:
             for k,v in reversed(n.items()):
                 print(f"{k} -> {v}")
+
+
+if __name__ == '__main__':
+    main()
+
 
 # vim: ts=4 sts=4 sw=4 et syntax=python:
