@@ -3,8 +3,6 @@
 __author__ = "Romeet Chhabra"
 __copyright__ = "Copyright 2020, Romeet Chhabra"
 __license__ = "MIT"
-__version__ = "0.2.0"
-
 
 import os
 from posixpath import expanduser
@@ -40,11 +38,12 @@ ANSI, ICONS, ALIAS = get_config()
 SUFFIX = {'dir': '/', 'link': '@', 'exe': '*', 'mount': '^'}
 
 
-UID_SUPPORT = False
 if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
     from pwd import getpwuid
     from grp import getgrgid
     UID_SUPPORT = True
+else:
+    UID_SUPPORT = False
 
     
 METRIC_PREFIXES = ['b', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
@@ -61,7 +60,7 @@ def get_human_readable_size(size, base=METRIC_MULTIPLE):
 def get_keys(path):
     n, ext = path.stem.lower(), path.suffix.lower()
     if ext == '':
-        ext = n
+        ext = n             # Replace ext with n if ext empty
     if ext.startswith('.'):
         ext = ext[1:]       # Remove leading period
 
@@ -93,11 +92,11 @@ def print_tree_listing(path, level=0, pos=0, tag=False, clear=False):
     print_short_listing(path, expand=True, tag=tag, clear=clear, end='\n')
 
 
-def print_long_listing(path, is_numeric=False, size_base=None, tag=False, clear=False):
+def print_long_listing(path, is_numeric=False, size_base=METRIC_MULTIPLE, tag=False, clear=False):
     try:
         st = path.stat()
         size = st.st_size
-        sz = get_human_readable_size(size, size_base if size_base else METRIC_MULTIPLE)
+        sz = get_human_readable_size(size, size_base)
         mtime = time.ctime(st.st_mtime)
         mode = os.path.stat.filemode(st.st_mode)
         ug_string = ""
@@ -117,7 +116,7 @@ def print_short_listing(path, expand=False, tag=False, clear=False, sep_len=None
         fmt, ico = 'none', 'none'
     else:
         fmt, ico = get_keys(path)
-    name = path.name + (SUFFIX.get(fmt, '') if tag else "")
+    name = path.name + (SUFFIX.get(fmt, '') if tag else '')
     if expand and path.is_symlink():
         name += " -> " + str(path.resolve())
     # Pretty certain using default sep_len is going to create issues
@@ -149,14 +148,14 @@ def process_dir(directory, args, level=0, size=None):
     except Exception as e:
         print(e, file=sys.stderr)
 
-    contents = sorted(contents)
-
     if args.directory:
         entries = subs
     elif args.file:
         entries = files
     else:
         entries = contents
+    
+    entries = sorted(entries)
 
     # TODO: A more elegant solution to aligning short print listing. This is an awful hack!
     longest_entry = max([len(str(x.name)) for x in entries]) if len(entries) > 0 else None
@@ -222,7 +221,9 @@ def main():
                         help="List information about the FILEs (the current directory by default).")
     args = parser.parse_args()
     if args.version:
-        print("colorls.py version " + __version__)
+        with open('_version.py') as VERSION_FILE:
+            version = VERSION_FILE.read()
+        print("colorls version " + version.split('"')[1])
 
     try:
         term_size = os.get_terminal_size()
