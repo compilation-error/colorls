@@ -31,7 +31,7 @@ def get_config():
     config.read([os.path.join(site.USER_BASE, 'config/colorls.ini'), 
                 os.path.join(Path(__file__).parent.absolute(), '../config/colorls.ini'), 
                 os.path.expanduser('~/.config/colorls.ini'), 
-                os.path.expanduser('~/.colorls.ini')])
+                os.path.expanduser('~/.colorls.ini')], encoding='utf8')
     return dict(config['FORMATTING']), dict(config['ICONS']), dict(config['ALIASES'])
 
 ANSI, ICONS, ALIAS = get_config()
