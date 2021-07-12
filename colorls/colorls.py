@@ -5,6 +5,7 @@ __copyright__ = "Copyright 2020, Romeet Chhabra"
 __license__ = "MIT"
 
 import os
+import shutil
 from posixpath import expanduser
 import sys
 import site
@@ -225,15 +226,11 @@ def main():
             version = VERSION_FILE.read()
         print("colorls version " + version.split('"')[1])
 
-    try:
-        term_size = os.get_terminal_size()
-    except Exception as e:
-        ...     # this can be quiet, since this is optional
-
     if not args.FILE:
         args.FILE = ["."]
 
     report = list()
+    term_size = shutil.get_terminal_size()
     for FILE in args.FILE:
         report.append(process_dir(FILE, args, size=term_size))
         print()
