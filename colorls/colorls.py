@@ -88,7 +88,7 @@ def get_keys(path):
 
 
 def print_tree_listing(path, level=0, pos=0, tag=False, clear=False):
-    tree_str = "   |   " * level + "   " + u'\u25ba' + "---"
+    tree_str = "   |   " * level + "   " + "---"
     print(tree_str, end="")
     print_short_listing(path, expand=True, tag=tag, clear=clear, end='\n')
 
@@ -222,7 +222,7 @@ def main():
                         help="List information about the FILEs (the current directory by default).")
     args = parser.parse_args()
     if args.version:
-        with open('_version.py') as VERSION_FILE:
+        with open(os.path.join(Path(__file__).parent.absolute(), '_version.py')) as VERSION_FILE:
             version = VERSION_FILE.read()
         print("colorls version " + version.split('"')[1])
 

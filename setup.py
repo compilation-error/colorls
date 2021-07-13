@@ -21,7 +21,7 @@ def get_version(rel_path):
 
 
 setuptools.setup(
-    name="colorls",
+    name="color-ls",
     version=get_version('colorls/_version.py'),
     author="Romeet Chhabra",
     author_email="romeetc@gmail.com",
@@ -42,7 +42,7 @@ setuptools.setup(
     python_requires=">=3.8",
     entry_points={
         "console_scripts": [
-            "colorls=colorls.colorls:main",
+            "lx=colorls.colorls:main",
         ],
     },
     data_files=[('config', ['config/colorls.ini']),
