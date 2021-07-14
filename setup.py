@@ -25,7 +25,8 @@ setuptools.setup(
     version=get_version('colorls/_version.py'),
     author="Romeet Chhabra",
     author_email="romeetc@gmail.com",
-    description="Pure Python implementation of subset of ls command with colors and icons",
+    description="Pure Python implementation of subset of ls command \
+        with colors and icons",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://gitlab.com/compilation-error/colorls",
@@ -46,5 +47,5 @@ setuptools.setup(
         ],
     },
     data_files=[('config', ['config/colorls.ini']),
-    ],
+                ],
 )
