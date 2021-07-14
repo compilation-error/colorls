@@ -6,7 +6,6 @@ __license__ = "MIT"
 
 import os
 import shutil
-from posixpath import expanduser
 import sys
 import site
 from pathlib import Path
@@ -29,11 +28,12 @@ def print_format_table():
 
 def get_config():
     config = ConfigParser()
-    config.read([os.path.join(site.USER_BASE, 'config/colorls.ini'), 
-                os.path.join(Path(__file__).parent.absolute(), '../config/colorls.ini'), 
-                os.path.expanduser('~/.config/colorls.ini'), 
+    config.read([os.path.join(site.USER_BASE, 'config/colorls.ini'),
+                os.path.join(Path(__file__).parent.absolute(), '../config/colorls.ini'),
+                os.path.expanduser('~/.config/colorls.ini'),
                 os.path.expanduser('~/.colorls.ini')], encoding='utf8')
     return dict(config['FORMATTING']), dict(config['ICONS']), dict(config['ALIASES'])
+
 
 ANSI, ICONS, ALIAS = get_config()
 SUFFIX = {'dir': '/', 'link': '@', 'exe': '*', 'mount': '^'}
@@ -46,10 +46,11 @@ if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
 else:
     UID_SUPPORT = False
 
-    
+
 METRIC_PREFIXES = ['b', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
 METRIC_MULTIPLE = 1024.
 SI_MULTIPLE = 1000.
+
 
 def get_human_readable_size(size, base=METRIC_MULTIPLE):
     for pre in METRIC_PREFIXES:
@@ -77,7 +78,7 @@ def get_keys(path):
         key1 = "hidden"
     else:
         key1 = "none"
-    
+
     if ext in ALIAS:
         if ALIAS[ext] in ANSI:
             key1 = ALIAS[ext]
@@ -155,7 +156,7 @@ def process_dir(directory, args, level=0, size=None):
         entries = files
     else:
         entries = contents
-    
+
     entries = sorted(entries)
 
     # TODO: A more elegant solution to aligning short print listing. This is an awful hack!
@@ -173,7 +174,7 @@ def process_dir(directory, args, level=0, size=None):
         if args.long or args.numeric_uid_gid:
             if args.si:
                 print_long_listing(path, is_numeric=args.numeric_uid_gid, size_base=SI_MULTIPLE, tag=args.classify)
-            else:    
+            else:
                 print_long_listing(path, is_numeric=args.numeric_uid_gid, tag=args.classify)
         elif args.tree and args.tree > 0:
             print_tree_listing(path, level=level, tag=args.classify)
@@ -239,7 +240,7 @@ def main():
     if args.report and report:
         print("\n --- REPORT ---")
         for n in report:
-            for k,v in reversed(n.items()):
+            for k, v in reversed(n.items()):
                 print(f"{k} -> {v}")
 
 
