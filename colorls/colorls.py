@@ -157,7 +157,7 @@ def process_dir(directory, args, level=0, size=None):
     else:
         entries = contents
 
-    entries = sorted(entries)
+    entries = sorted(entries, key=lambda s: str(s)[1:].lower() if str(s).startswith('.') else str(s).lower())
 
     # TODO: A more elegant solution to aligning short print listing. This is an awful hack!
     longest_entry = max([len(str(x.name)) for x in entries]) if len(entries) > 0 else None
