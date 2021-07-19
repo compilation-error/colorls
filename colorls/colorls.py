@@ -179,7 +179,7 @@ def process_dir(directory, args, level=0, size=None):
         elif args.tree and args.tree > 0:
             print_tree_listing(path, level=level, tag=args.classify)
             if path.is_dir() and level < args.tree - 1:
-                report[path.name] = process_dir(path, args, level=level+1, size=size)[path]
+                report[path.name] = process_dir(path, args, level=level + 1, size=size)[path]
         else:
             print_short_listing(path, sep_len=longest_entry, tag=args.classify, end=end)
             run += 1
@@ -208,7 +208,7 @@ def main():
                         help="list directories themselves, not their contents")
     parser.add_argument("-f", "--file", action="store_true", default=False, help="list files only, not directories")
     parser.add_argument("-F", "--classify", action="store_true",
-                         default=False, help="append indicator (one of */=>@|) to entries")
+                        default=False, help="append indicator (one of */=>@|) to entries")
     parser.add_argument("-I", "--ignore", metavar="PATTERN", help="do not list implied entries matching shell PATTERN")
     parser.add_argument("-l", "--long", action="store_true", default=False, help="use a long listing format")
     parser.add_argument("-n", "--numeric-uid-gid", action="store_true",
